@@ -6,7 +6,7 @@
 
 void Main()
 {
-	// Write code to test your extensions here. Press F5 to compile and run.
+	("%USERPROFILE%".Expand() != "%USERPROFILE").Dump("ENV Expansion Works");
 }
 
 public static class MyExtensions
@@ -40,6 +40,7 @@ public static class MyExtensions
 		return things.Mode(t => t);
 	}
 
+	/// Find the mode of the collection based on a provided identity selector function
 	public static T Mode<T, TIdentity>(this IEnumerable<T> things, Func<T, TIdentity> identitySelector) {
 		return things
 			.GroupBy(t => t, By(identitySelector))
@@ -47,7 +48,8 @@ public static class MyExtensions
 			.First()
 			.Key;
 	}
-
+	
+	/// Do environment expansion on values in the string like %USERPROFILE%
 	public static string Expand(this string path) {
 		return Environment.ExpandEnvironmentVariables(path);
 	}
@@ -64,6 +66,7 @@ public static class MyExtensions
 		File.WriteAllText(path.Expand(), contents, encoding);
 	}
 
+	/// Get the hex representation of the byte data
 	public static string ToHex(this byte[] bytes) {
 		char[] c = new char[bytes.Length * 2];
 		byte b;
@@ -79,27 +82,33 @@ public static class MyExtensions
 		return new string(c);
 	}
 
+	/// Get the Hex-encoded SHA1 digest of the string
 	public static string ShaMe(this string s) {
 		return SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(s)).ToHex();
 	}
 
+	/// RegEx replace parts of input based on pattern with the replacement string
 	public static string RePlace(this string input, string pattern, string replacement, RegexOptions options = RegexOptions.None) {
 		var re = new Regex(pattern, options);
 		return re.Replace(input, replacement);
 	}
 
+	/// RegEx replace parts of the clipboard based on the pattern with the replacement string
 	public static string ClipReg(this string pattern, string replacement, RegexOptions options = RegexOptions.None) {
 		return System.Windows.Clipboard.GetText().RePlace(pattern, replacement, options);
 	}
 
+	/// Decode a base64 string
 	public static string FromBase64(this string b64str) {
 		return Encoding.UTF8.GetString(Convert.FromBase64String(b64str));
 	}
 
+	/// Encode data to base-64
 	public static string ToBase64(this byte[] data, Base64FormattingOptions options = Base64FormattingOptions.InsertLineBreaks) {
 		return Convert.ToBase64String(data, options);
 	}
 
+	/// Encode a string in base-64
 	public static string ToBase64(this string str, Base64FormattingOptions options = Base64FormattingOptions.InsertLineBreaks) {
 		return Encoding.UTF8.GetBytes(str).ToBase64(options);
 	}
