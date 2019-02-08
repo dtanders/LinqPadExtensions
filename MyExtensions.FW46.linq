@@ -1,5 +1,6 @@
 <Query Kind="Program">
   <Reference>&lt;RuntimeDirectory&gt;\WPF\PresentationCore.dll</Reference>
+  <Namespace>System.IO</Namespace>
   <Namespace>System.Security.Cryptography</Namespace>
   <Namespace>System.Windows</Namespace>
 </Query>
@@ -64,6 +65,14 @@ public static class MyExtensions
 	public static void WritePath(this string path, string contents, Encoding encoding = null) {
 		encoding = encoding ?? Encoding.UTF8;
 		File.WriteAllText(path.Expand(), contents, encoding);
+	}
+	
+	///Get the contents of a path
+	public static IEnumerable<FileSystemInfo> Dir(this string path, string searchPatternGlob="*", 
+		SearchOption searchOption=SearchOption.TopDirectoryOnly)
+	{
+		var info = new DirectoryInfo(path);
+		return info.EnumerateFileSystemInfos(searchPatternGlob, searchOption);
 	}
 
 	/// Get the hex representation of the byte data
