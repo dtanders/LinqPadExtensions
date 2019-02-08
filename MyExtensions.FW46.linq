@@ -51,7 +51,7 @@ public static class MyExtensions
 	}
 	
 	///Concatenate assignable types because Enumerable.Concat isn't smart enough
-	public static IEnumerable<TBase> ConcatAssignable<TBase, TDerived>(this IEnumerable<TBase> first, IEnumerable<TDerived> second)
+	public static IEnumerable<TBase> Concat<TBase, TDerived>(this IEnumerable<TBase> first, IEnumerable<TDerived> second)
 		 where TDerived : TBase
 	{
 		foreach (var thing in first) {
@@ -85,8 +85,8 @@ public static class MyExtensions
 	{
 		var info = new DirectoryInfo(path);
 		return Enumerable.Empty<FileSystemInfo>()
-			.ConcatAssignable(info.EnumerateDirectories(searchPatternGlob, searchOption))
-			.ConcatAssignable(info.EnumerateFiles(searchPatternGlob, searchOption));
+			.Concat(info.EnumerateDirectories(searchPatternGlob, searchOption))
+			.Concat(info.EnumerateFiles(searchPatternGlob, searchOption));
 	}
 
 	///Write a string to a file represented by a file info
