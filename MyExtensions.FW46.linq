@@ -1,5 +1,6 @@
 <Query Kind="Program">
   <Reference>&lt;RuntimeDirectory&gt;\WPF\PresentationCore.dll</Reference>
+  <Namespace>System.IO</Namespace>
   <Namespace>System.Security.Cryptography</Namespace>
   <Namespace>System.Windows</Namespace>
 </Query>
@@ -50,6 +51,18 @@ public static class MyExtensions
 			.Key;
 	}
 	
+	///Concatenate assignable types because Enumerable.Concat isn't smart enough
+	public static IEnumerable<TBase> Concat<TBase, TDerived>(this IEnumerable<TBase> first, IEnumerable<TDerived> second)
+		 where TDerived : TBase
+	{
+		foreach (var thing in first) {
+			yield return thing;
+		}
+		foreach (var thing in second) {
+			yield return thing;
+		}
+	}
+	
 	/// Do environment expansion on values in the string like %USERPROFILE%
 	public static string Expand(this string path) {
 		return Environment.ExpandEnvironmentVariables(path);
@@ -57,14 +70,39 @@ public static class MyExtensions
 
 	/// Read the path after expanding any environment valiables
 	public static string ReadPath(this string path, Encoding encoding = null) {
-		encoding = encoding ?? Encoding.UTF8;
+		encoding = encoding ?? Encoding.Unicode;
 		return File.ReadAllText(path.Expand(), encoding);
 	}
 
-	/// Write to the path after expanding any environment valiables
+	/// Write to the path after expanding any environment valiables (defaults to Unicode)
 	public static void WritePath(this string path, string contents, Encoding encoding = null) {
-		encoding = encoding ?? Encoding.UTF8;
+		encoding = encoding ?? Encoding.Unicode; //not a compile time constant
 		File.WriteAllText(path.Expand(), contents, encoding);
+	}
+	
+	///Get the contents of a path
+	public static IEnumerable<FileSystemInfo> Dir(this string path, string searchPatternGlob="*", 
+		SearchOption searchOption=SearchOption.TopDirectoryOnly)
+	{
+		var info = new DirectoryInfo(path);
+		return Enumerable.Empty<FileSystemInfo>()
+			.Concat(info.EnumerateDirectories(searchPatternGlob, searchOption))
+			.Concat(info.EnumerateFiles(searchPatternGlob, searchOption));
+	}
+
+	///Write a string to a file represented by a file info
+	public static FileSystemInfo Write(this FileSystemInfo file, string content, Encoding encoding = null) {
+		if (file is FileInfo f) {
+			f.FullName.WritePath(content, encoding);
+		}
+		return file;
+	}
+	
+	public static string Read(this FileSystemInfo file, Encoding encoding=null){
+		if (file is FileInfo f){
+			return f.FullName.ReadPath(encoding);
+		}
+		return null;
 	}
 
 	/// Get the hex representation of the byte data
