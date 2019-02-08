@@ -7,6 +7,7 @@
 void Main()
 {
 	("%USERPROFILE%".Expand() != "%USERPROFILE").Dump("ENV Expansion Works");
+	("Waldstraße".EqualsICIC("Waldstrasse")).Dump("Case-Insensitive string compairson works");
 }
 
 public static class MyExtensions
@@ -111,6 +112,17 @@ public static class MyExtensions
 	/// Encode a string in base-64
 	public static string ToBase64(this string str, Base64FormattingOptions options = Base64FormattingOptions.InsertLineBreaks) {
 		return Encoding.UTF8.GetBytes(str).ToBase64(options);
+	}
+	
+	/// Case-insensitive string comparison using Invariant Ignore Case
+	public static bool EqualsICIC(this string a, string b){
+		return StringComparer.InvariantCultureIgnoreCase.Equals(a, b);
+	}
+	
+	/// Because IsAssignableFrom doesn't work quite right with generic types
+	public static bool IsAssignableFromGeneic(this Type type, Type someGenericType){
+		//maybe also check IsAssignableFrom?
+		return type.BaseType != null && type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == someGenericType;
 	}
 }
 
