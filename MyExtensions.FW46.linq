@@ -157,6 +157,11 @@ public static class MyExtensions
 		return StringComparer.InvariantCultureIgnoreCase.Equals(a, b);
 	}
 	
+	/// LINQ style string join
+	public static string Join(this IEnumerable<string> sequence, string separator){
+		return string.Join(separator, sequence);
+	}
+	
 	/// Because IsAssignableFrom doesn't work quite right with generic types
 	public static bool IsAssignableFromGeneic(this Type type, Type someGenericType){
 		//maybe also check IsAssignableFrom?
