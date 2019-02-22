@@ -162,6 +162,11 @@ public static class MyExtensions
 		return string.Join(separator, sequence);
 	}
 	
+	/// Simplistic line wrapping function
+	public static string Wrap(this string tooLong, int lineLength=80) {
+		return tooLong.RePlace(@"(.{" + lineLength + @",}?\b.)(\b)", "$1$2" + Environment.NewLine);
+	}
+	
 	/// Because IsAssignableFrom doesn't work quite right with generic types
 	public static bool IsAssignableFromGeneic(this Type type, Type someGenericType){
 		//maybe also check IsAssignableFrom?
