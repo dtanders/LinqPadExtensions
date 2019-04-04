@@ -70,13 +70,13 @@ public static class MyExtensions
 
 	/// Read the path after expanding any environment valiables
 	public static string ReadPath(this string path, Encoding encoding = null) {
-		encoding = encoding ?? Encoding.Unicode;
+		encoding = encoding ?? Encoding.UTF8;
 		return File.ReadAllText(path.Expand(), encoding);
 	}
 
 	/// Write to the path after expanding any environment valiables (defaults to Unicode)
 	public static void WritePath(this string path, string contents, Encoding encoding = null) {
-		encoding = encoding ?? Encoding.Unicode; //not a compile time constant
+		encoding = encoding ?? Encoding.UTF8; //not a compile time constant
 		File.WriteAllText(path.Expand(), contents, encoding);
 	}
 	
@@ -152,6 +152,10 @@ public static class MyExtensions
 		return Encoding.UTF8.GetBytes(str).ToBase64(options);
 	}
 	
+	public static byte[] ToBytes(this string str) {
+		return Encoding.UTF8.GetBytes(str);
+	}
+	
 	/// Case-insensitive string comparison using Invariant Ignore Case
 	public static bool EqualsICIC(this string a, string b){
 		return StringComparer.InvariantCultureIgnoreCase.Equals(a, b);
@@ -168,9 +172,24 @@ public static class MyExtensions
 	}
 	
 	/// Because IsAssignableFrom doesn't work quite right with generic types
-	public static bool IsAssignableFromGeneic(this Type type, Type someGenericType){
+	public static bool IsAssignableFromGeneic(this Type type, Type someGenericType) {
 		//maybe also check IsAssignableFrom?
 		return type.BaseType != null && type.BaseType.IsGenericType && type.BaseType.GetGenericTypeDefinition() == someGenericType;
+	}
+
+	/// Get the property info out of the body of an Expression<Func<>>
+	public static PropertyInfo PropInfo<T>(this Expression<T> exp) 
+		where T: Delegate {
+		return (PropertyInfo)((MemberExpression)exp.Body).Member;
+	}
+
+	public static T TryMe<T>(this Func<T> func) {
+		try {
+			return func();
+		} catch (Exception ex) {
+			ex.Dump();
+		}
+		return default;
 	}
 }
 
