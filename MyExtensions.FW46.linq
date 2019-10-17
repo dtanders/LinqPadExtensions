@@ -7,12 +7,20 @@
 
 void Main()
 {
-	("%USERPROFILE%".Expand() != "%USERPROFILE").Dump("ENV Expansion Works");
+	("%USERPROFILE%".Expand() != "%USERPROFILE%").Dump("ENV Expansion Works");
 	("Waldstraße".EqualsICIC("Waldstrasse")).Dump("Case-Insensitive string compairson works");
+}
+
+public enum SHAVer {
+	_1 = 1,
+	_256 = 256,
+	_512 = 512,
 }
 
 public static class MyExtensions
 {
+	public static Encoding Enc = Encoding.UTF8;
+	
 	public static IEnumerable<T> DistinctBy<T, TIdentity>(this IEnumerable<T> source, Func<T, TIdentity> identitySelector) {
 		return source.Distinct(By(identitySelector));
 	}
@@ -70,13 +78,13 @@ public static class MyExtensions
 
 	/// Read the path after expanding any environment valiables
 	public static string ReadPath(this string path, Encoding encoding = null) {
-		encoding = encoding ?? Encoding.UTF8;
+		encoding = encoding ?? Enc;
 		return File.ReadAllText(path.Expand(), encoding);
 	}
 
 	/// Write to the path after expanding any environment valiables (defaults to Unicode)
 	public static void WritePath(this string path, string contents, Encoding encoding = null) {
-		encoding = encoding ?? Encoding.UTF8; //not a compile time constant
+		encoding = encoding ?? Enc;
 		File.WriteAllText(path.Expand(), contents, encoding);
 	}
 	
@@ -121,9 +129,28 @@ public static class MyExtensions
 		return new string(c);
 	}
 
-	/// Get the Hex-encoded SHA1 digest of the string
-	public static string ShaMe(this string s) {
-		return SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(s)).ToHex();
+	///Get the SHA digest of the string
+	public static byte[] ShaMeToBytes(this string s, SHAVer version = SHAVer._1) {
+		var bytes = Enc.GetBytes(s);
+		switch (version) {
+			case SHAVer._512:
+				return System.Security.Cryptography.SHA512.Create().ComputeHash(bytes);
+			case SHAVer._256:
+				return System.Security.Cryptography.SHA256.Create().ComputeHash(bytes);
+			case SHAVer._1:
+			default:
+				return SHA1.Create().ComputeHash(bytes);
+		}
+	}
+
+	/// Get the Hex-encoded SHA digest of the string
+	public static string ShaMe(this string s, SHAVer version = SHAVer._1) {
+		return s.ShaMeToBytes(version).ToHex();
+	}
+	
+	///Get the Base64-encoded SHA digest of the string
+	public static string ShaMe64(this string s, SHAVer version = SHAVer._1) {
+		return s.ShaMeToBytes(version).ToBase64();
 	}
 
 	/// RegEx replace parts of input based on pattern with the replacement string
@@ -139,7 +166,7 @@ public static class MyExtensions
 
 	/// Decode a base64 string
 	public static string FromBase64(this string b64str) {
-		return Encoding.UTF8.GetString(Convert.FromBase64String(b64str));
+		return Enc.GetString(Convert.FromBase64String(b64str));
 	}
 
 	/// Encode data to base-64
@@ -149,11 +176,11 @@ public static class MyExtensions
 
 	/// Encode a string in base-64
 	public static string ToBase64(this string str, Base64FormattingOptions options = Base64FormattingOptions.InsertLineBreaks) {
-		return Encoding.UTF8.GetBytes(str).ToBase64(options);
+		return Enc.GetBytes(str).ToBase64(options);
 	}
 	
 	public static byte[] ToBytes(this string str) {
-		return Encoding.UTF8.GetBytes(str);
+		return Enc.GetBytes(str);
 	}
 	
 	/// Case-insensitive string comparison using Invariant Ignore Case
@@ -191,6 +218,10 @@ public static class MyExtensions
 		}
 		return default;
 	}
+	
+//	public static IEnumerable<string> AsInsert<T>(this IQueryable<T> records) {
+//		records.ElementType.
+//	}
 }
 
 // You can also define non-static classes, enums, etc.
