@@ -247,7 +247,7 @@ public static class MyExtensions
 		}
 	}
 
-	private static Regex imperfectNumberDetector = new Regex(@"^[\d\.]+$");
+	private static Regex imperfectNumberDetector = new Regex(@"^-*[\d\.]+$");
 	///Escape parts of the results copied out of SSMS so they can go into an INSERT statement
 	public static string SqlFormatter(this string results) {
 		return results
