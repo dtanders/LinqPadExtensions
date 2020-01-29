@@ -6,12 +6,16 @@
   <Namespace>System.Windows</Namespace>
   <Namespace>System.Runtime.CompilerServices</Namespace>
   <Namespace>System.Runtime.Serialization</Namespace>
+  <Namespace>System</Namespace>
 </Query>
 
 void Main()
 {
 	("%USERPROFILE%".Expand() != "%USERPROFILE%").Dump("ENV Expansion Works");
-	("Waldstraße".EqualsICIC("Waldstrasse")).Dump("Case-Insensitive string compairson works");
+//	("Waldstraße".EqualsICIC("Waldstrasse")).Dump("Case-Insensitive string compairson works");
+//	("i".EqualsICIC("İ")).Dump("Turkish is maybe working?");
+//	StringComparer.OrdinalIgnoreCase.Equals("i", "İ").Dump();
+	((new List<int> {1, 2, 3}).Join(", ") == "1, 2, 3").Dump("Join ints works");
 }
 
 public enum SHAVer {
@@ -74,6 +78,20 @@ public static class MyExtensions
 		}
 	}
 	
+	/// Wrapper to get indexes in a foreach
+	public static IEnumerable<(int i, T t)> Enumerate<T>(this IEnumerable<T> sequence, int startAt=0) {
+		foreach (var item in sequence){
+			yield return (i: startAt++, t: item);
+		}
+	}
+
+	/// Wrapper to get very large (ulong) indexes in a foreach
+	public static IEnumerable<(ulong i, T t)> EnumerateLarge<T>(this IEnumerable<T> sequence, ulong startAt=0) {
+		foreach (var item in sequence) {
+			yield return (i: startAt++, t: item);
+		}
+	}
+
 	/// Do environment expansion on values in the string like %USERPROFILE%
 	public static string Expand(this string path) {
 		return Environment.ExpandEnvironmentVariables(path);
@@ -88,7 +106,9 @@ public static class MyExtensions
 	/// Write to the path after expanding any environment valiables (defaults to Unicode)
 	public static void WritePath(this string path, string contents, Encoding encoding = null) {
 		encoding = encoding ?? Enc;
-		File.WriteAllText(path.Expand(), contents, encoding);
+		var expandedPath = path.Expand();
+		Directory.CreateDirectory(Path.GetFullPath(expandedPath));
+		File.WriteAllText(expandedPath, contents, encoding);
 	}
 	
 	///Get the contents of a path
@@ -192,7 +212,7 @@ public static class MyExtensions
 	}
 	
 	/// LINQ style string join
-	public static string Join(this IEnumerable<string> sequence, string separator){
+	public static string Join<T>(this IEnumerable<T> sequence, string separator){
 		return string.Join(separator, sequence);
 	}
 	
@@ -249,16 +269,15 @@ public static class MyExtensions
 
 	private static Regex imperfectNumberDetector = new Regex(@"^-*[\d\.]+$");
 	///Escape parts of the results copied out of SSMS so they can go into an INSERT statement
-	public static string SqlFormatter(this string results) {
-		return results
-		.Split('\t')
-		.Select(col => col == "NULL" 
-				? col 
-				: (!imperfectNumberDetector.IsMatch(col) 
-					? $"'{col.Replace("'", "''")}'" 
-					: col))
-		.Join(", ");
-	}
+	public static string SqlFormatter(this string results)
+		=> results
+			.Split('\t')
+			.Select(col => col == "NULL" 
+					? col 
+					: (!imperfectNumberDetector.IsMatch(col) 
+						? $"'{col.Replace("'", "''")}'" 
+						: col))
+			.Join(", ");
 
 	//	public static IEnumerable<string> AsInsert<T>(this IQueryable<T> records) {
 	//		records.ElementType.
