@@ -11,10 +11,11 @@
 
 void Main()
 {
+	//NOTE TO SELF: do NOT use BindingFlags with GetProperties >:(
 	("%USERPROFILE%".Expand() != "%USERPROFILE%").Dump("ENV Expansion Works");
-//	("Waldstraße".EqualsICIC("Waldstrasse")).Dump("Case-Insensitive string compairson works");
-//	("i".EqualsICIC("İ")).Dump("Turkish is maybe working?");
-//	StringComparer.OrdinalIgnoreCase.Equals("i", "İ").Dump();
+	//("Waldstraße".EqualsICIC("Waldstrasse")).Dump("Case-Insensitive string compairson works");
+	//("i".EqualsICIC("İ")).Dump("Turkish is maybe working?");
+	//StringComparer.OrdinalIgnoreCase.Equals("i", "İ").Dump();
 	((new List<int> {1, 2, 3}).Join(", ") == "1, 2, 3").Dump("Join ints works");
 }
 
@@ -24,8 +25,7 @@ public enum SHAVer {
 	_512 = 512,
 }
 
-public static class MyExtensions
-{
+public static class MyExtensions {
 	public static Encoding Enc = Encoding.UTF8;
 	
 	public static IEnumerable<T> DistinctBy<T, TIdentity>(this IEnumerable<T> source, Func<T, TIdentity> identitySelector) {
@@ -80,7 +80,7 @@ public static class MyExtensions
 	
 	/// Wrapper to get indexes in a foreach
 	public static IEnumerable<(int i, T t)> Enumerate<T>(this IEnumerable<T> sequence, int startAt=0) {
-		foreach (var item in sequence){
+		foreach (var item in sequence) {
 			yield return (i: startAt++, t: item);
 		}
 	}
@@ -107,7 +107,7 @@ public static class MyExtensions
 	public static void WritePath(this string path, string contents, Encoding encoding = null) {
 		encoding = encoding ?? Enc;
 		var expandedPath = path.Expand();
-		Directory.CreateDirectory(Path.GetFullPath(expandedPath));
+		Directory.CreateDirectory(Path.GetDirectoryName(expandedPath));
 		File.WriteAllText(expandedPath, contents, encoding);
 	}
 	
@@ -129,8 +129,8 @@ public static class MyExtensions
 		return file;
 	}
 	
-	public static string Read(this FileSystemInfo file, Encoding encoding=null){
-		if (file is FileInfo f){
+	public static string Read(this FileSystemInfo file, Encoding encoding=null) {
+		if (file is FileInfo f) {
 			return f.FullName.ReadPath(encoding);
 		}
 		return null;
@@ -153,7 +153,7 @@ public static class MyExtensions
 	}
 
 	///Get the SHA digest of the string
-	public static byte[] ShaMeToBytes(this string s, SHAVer version = SHAVer._1) {
+	public static byte[] ShaMeToBytes(this string s, SHAVer version=SHAVer._1) {
 		var bytes = Enc.GetBytes(s);
 		switch (version) {
 			case SHAVer._512:
@@ -177,13 +177,13 @@ public static class MyExtensions
 	}
 
 	/// RegEx replace parts of input based on pattern with the replacement string
-	public static string RePlace(this string input, string pattern, string replacement, RegexOptions options = RegexOptions.None) {
+	public static string RePlace(this string input, string pattern, string replacement, RegexOptions options=RegexOptions.None) {
 		var re = new Regex(pattern, options);
 		return re.Replace(input, replacement);
 	}
 
 	/// RegEx replace parts of the clipboard based on the pattern with the replacement string
-	public static string ClipReg(this string pattern, string replacement, RegexOptions options = RegexOptions.None) {
+	public static string ClipReg(this string pattern, string replacement, RegexOptions options=RegexOptions.None) {
 		return System.Windows.Clipboard.GetText().RePlace(pattern, replacement, options);
 	}
 
@@ -193,12 +193,12 @@ public static class MyExtensions
 	}
 
 	/// Encode data to base-64
-	public static string ToBase64(this byte[] data, Base64FormattingOptions options = Base64FormattingOptions.InsertLineBreaks) {
+	public static string ToBase64(this byte[] data, Base64FormattingOptions options=Base64FormattingOptions.InsertLineBreaks) {
 		return Convert.ToBase64String(data, options);
 	}
 
 	/// Encode a string in base-64
-	public static string ToBase64(this string str, Base64FormattingOptions options = Base64FormattingOptions.InsertLineBreaks) {
+	public static string ToBase64(this string str, Base64FormattingOptions options=Base64FormattingOptions.InsertLineBreaks) {
 		return Enc.GetBytes(str).ToBase64(options);
 	}
 	
@@ -207,18 +207,37 @@ public static class MyExtensions
 	}
 	
 	/// Case-insensitive string comparison using Invariant Ignore Case
-	public static bool EqualsICIC(this string a, string b){
+	public static bool EqualsICIC(this string a, string b) {
 		return StringComparer.InvariantCultureIgnoreCase.Equals(a, b);
 	}
 	
 	/// LINQ style string join
-	public static string Join<T>(this IEnumerable<T> sequence, string separator){
+	public static string Join<T>(this IEnumerable<T> sequence, string separator) {
 		return string.Join(separator, sequence);
 	}
 	
+	/// LINQ join with formatting function
+	public static string Join<T>(this IEnumerable<T> sequence, string seperator, Func<T, string> formatter) {
+		return sequence.Select(s => formatter(s)).Join(seperator);
+	}
+
 	/// Simplistic line wrapping function
-	public static string Wrap(this string tooLong, int lineLength=80) {
+	public static string Wrap(this string tooLong, int lineLength = 80) {
 		return tooLong.RePlace(@"(.{" + lineLength + @",}?\b.)(\b)", "$1$2" + Environment.NewLine);
+	}
+	
+	public static bool ContainsIgnoreCase(this string s, string search)
+		=> s.IndexOf(search, StringComparison.InvariantCultureIgnoreCase) > -1;
+		
+	public static bool ContainsAnyOf(this string s, IEnumerable<string> searches)
+		=> searches.Any(se => s.Contains(se));
+	
+	public static bool ContainsAnyOfIgnorCase(this string s, IEnumerable<string> searches)
+		=> searches.Any(se => s.ContainsIgnoreCase(se));
+
+	/// Convert and return as the type
+	public static T ConvertObject<T>(object input) {
+		return (T)Convert.ChangeType(input, typeof(T));
 	}
 	
 	/// Because IsAssignableFrom doesn't work quite right with generic types
@@ -233,7 +252,7 @@ public static class MyExtensions
 		return (PropertyInfo)((MemberExpression)exp.Body).Member;
 	}
 	
-	public static TOut TryMe<TIn, TOut>(this Func<TIn, TOut> func, TIn args){
+	public static TOut TryMe<TIn, TOut>(this Func<TIn, TOut> func, TIn args) {
 		try {
 			return func(args);
 		} catch (Exception ex) {
@@ -251,7 +270,7 @@ public static class MyExtensions
 		return default;
 	}
 	
-	public static void TryMe<T>(this Action<T> act, T args){
+	public static void TryMe<T>(this Action<T> act, T args) {
 		try {
 			act(args);
 		} catch (Exception ex) {
