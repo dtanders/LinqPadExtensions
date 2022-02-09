@@ -131,7 +131,9 @@ public static class MyExtensions {
 	}
 
 	/// Get the hex representation of the byte data
-	public static string ToHex(this byte[] bytes) {
+	public static string ToHex(this byte[] bytes) => new string(bytes.ToHexChars());
+
+	public static char[] ToHexChars(this byte[] bytes) {
 		char[] c = new char[bytes.Length * 2];
 		byte b;
 
@@ -142,13 +144,11 @@ public static class MyExtensions {
 			b = ((byte)(bytes[bx] & 0x0F));
 			c[++cx] = (char)(b > 9 ? b + 0x37 + 0x20 : b + 0x30);
 		}
-
-		return new string(c);
+		return c;
 	}
 
-	///Get the SHA digest of the string
-	public static byte[] ShaMeToBytes(this string s, SHAVer version = SHAVer._1) {
-		var bytes = Enc.GetBytes(s);
+	/// Hash some dang bytes
+	public static byte[] ShaBytes(this byte[] bytes, SHAVer version = SHAVer._1) {
 		switch (version) {
 			case SHAVer._512:
 				return System.Security.Cryptography.SHA512.Create().ComputeHash(bytes);
@@ -158,6 +158,11 @@ public static class MyExtensions {
 			default:
 				return SHA1.Create().ComputeHash(bytes);
 		}
+	}
+
+	/// Get the SHA digest of the string with our default encoding
+	public static byte[] ShaMeToBytes(this string s, SHAVer version = SHAVer._1) {
+		return Enc.GetBytes(s).ShaBytes(version);
 	}
 
 	/// Get the Hex-encoded SHA digest of the string
@@ -215,6 +220,18 @@ public static class MyExtensions {
 		return sequence.Select(s => formatter(s)).Join(seperator);
 	}
 
+	public static T TakeRandom<T>(this IEnumerable<T> source) {
+		return source.TakeRandom(1).Single();
+	}
+
+	public static IEnumerable<T> TakeRandom<T>(this IEnumerable<T> source, int count) {
+		return source.Shuffle().Take(count);
+	}
+
+	public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source) {
+		return source.OrderBy(x => Guid.NewGuid());
+	}
+
 	/// Simplistic line wrapping function
 	public static string Wrap(this string tooLong, int lineLength = 80) {
 		return tooLong.RePlace(@"(.{" + lineLength + @",}?\b.)(\b)", "$1$2" + Environment.NewLine);
@@ -239,6 +256,11 @@ public static class MyExtensions {
 		where T: Delegate {
 		return (PropertyInfo)((MemberExpression)exp.Body).Member;
 	}
+
+	public static bool IsDefault<T>(this T obj) =>
+		default(T) == null
+			? obj == null
+			: default(T).Equals(obj);
 
 	public static TOut TryMe<TIn, TOut>(this Func<TIn, TOut> func, TIn args) {
 		try {
@@ -271,6 +293,13 @@ public static class MyExtensions {
 			act();
 		} catch (Exception ex) {
 			ex.Dump();
+		}
+	}
+
+	///this is probably a terrible idea
+	public static IEnumerable<T> Yield<T>(this Func<bool> condition, Func<T> generator) {
+		while (condition()) {
+			yield return generator();
 		}
 	}
 
@@ -342,10 +371,21 @@ public static class MyExtensions {
 				),
 				new XElement("div",
 					new XAttribute("class", "copytarget"),
-					str
+					str //doesn't like new lines for some reason
 				)
 			)
 		).Dump();
 		return str;
 	}
 }
+
+
+#region Advanced - How to multi-target
+
+// The NET5 symbol can be useful when you want to run some queries under .NET 5 and others under .NET Core 3:
+
+#if NET5
+// Code that requires .NET 5 or later
+#endif
+
+#endregion
