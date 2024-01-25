@@ -72,17 +72,26 @@ public static class MyExtensions {
 		}
 	}
 
-	/// Wrapper to get indexes in a foreach
-	public static IEnumerable<(int i, T t)> Enumerate<T>(this IEnumerable<T> sequence, int startAt=0) {
+	/// Wrapper to get indexes in a foreach with less typing than Select
+	public static IEnumerable<(uint i, T t)> Enumerate<T>(this IEnumerable<T> sequence, uint startAt=0) {
 		foreach (var item in sequence) {
-			yield return (i: startAt++, t: item);
+			yield return (i: checked(startAt++), t: item);
 		}
 	}
 
 	/// Wrapper to get very large (ulong) indexes in a foreach
 	public static IEnumerable<(ulong i, T t)> EnumerateLarge<T>(this IEnumerable<T> sequence, ulong startAt=0) {
-		foreach (var item in sequence) {
-			yield return (i: startAt++, t: item);
+		checked {
+			foreach (var item in sequence) {
+				yield return (i: checked(startAt++), t: item);
+			}
+		}
+	}
+	
+	/// WIP-ish
+	public static IEnumerable<T> Enumerateable<T>(this IEnumerable enumerable){
+		foreach (T element in enumerable) {
+			yield return element;
 		}
 	}
 
@@ -95,6 +104,12 @@ public static class MyExtensions {
 	public static string ReadPath(this string path, Encoding encoding = null) {
 		encoding = encoding ?? Enc;
 		return File.ReadAllText(path.Expand(), encoding);
+	}
+	
+	/// Expand the path environment variables 
+	public static IEnumerable<string> ReadPathLines(this string path, Encoding encoding = null){
+		encoding = encoding ?? Enc;
+		return File.ReadLines(path.Expand(), encoding);
 	}
 
 	/// Write to the path after expanding any environment valiables (defaults to Unicode)
@@ -170,7 +185,7 @@ public static class MyExtensions {
 		return s.ShaMeToBytes(version).ToHex();
 	}
 
-	///Get the Base64-encoded SHA digest of the string
+	/// Get the Base64-encoded SHA digest of the string
 	public static string ShaMe64(this string s, SHAVer version = SHAVer._1) {
 		return s.ShaMeToBytes(version).ToBase64();
 	}
@@ -220,6 +235,7 @@ public static class MyExtensions {
 		return sequence.Select(s => formatter(s)).Join(seperator);
 	}
 
+	/// <summary>Never know when you need to randomly pick something</summary>
 	public static T TakeRandom<T>(this IEnumerable<T> source) {
 		return source.TakeRandom(1).Single();
 	}
@@ -350,6 +366,17 @@ public static class MyExtensions {
 		}
 	}
 
+	public static string FormatXml(this string xml) {
+		try {
+			XDocument doc = XDocument.Parse(xml);
+			return doc.ToString();
+		} catch (Exception x) {
+			$"Problem formatting the XML: {x.Message}".Dump();
+			// Handle and throw if fatal exception here; don't just ignore them
+			return xml;
+		}
+	}
+
 	public static string DumpCopyable(this string str, string header="") {
 		new XElement("LINQPad.HTML",
 			new XElement("div",
@@ -382,7 +409,15 @@ public static class MyExtensions {
 
 #region Advanced - How to multi-target
 
-// The NET5 symbol can be useful when you want to run some queries under .NET 5 and others under .NET Core 3:
+// The NETx symbol is active when a query runs under .NET x or later.
+
+#if NET7
+// Code that requires .NET 7 or later
+#endif
+
+#if NET6
+// Code that requires .NET 6 or later
+#endif
 
 #if NET5
 // Code that requires .NET 5 or later
