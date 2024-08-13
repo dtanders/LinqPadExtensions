@@ -71,6 +71,11 @@ public static class MyExtensions {
 			yield return thing;
 		}
 	}
+	
+	public static List<T> Append<T>(this List<T> someList, IEnumerable<T> someOtherList){
+		someList.AddRange(someOtherList);
+		return someList;
+	}
 
 	/// Wrapper to get indexes in a foreach with less typing than Select
 	public static IEnumerable<(uint i, T t)> Enumerate<T>(this IEnumerable<T> sequence, uint startAt=0) {
@@ -106,10 +111,15 @@ public static class MyExtensions {
 		return File.ReadAllText(path.Expand(), encoding);
 	}
 	
-	/// Expand the path environment variables 
+	/// Read the path as an enumerable of lines after expanding any environment valiables
 	public static IEnumerable<string> ReadPathLines(this string path, Encoding encoding = null){
 		encoding = encoding ?? Enc;
 		return File.ReadLines(path.Expand(), encoding);
+	}
+	
+	/// Read the path and return all bytes after expanding any environment variables
+	public static byte[] ReadPathBytes(this string path) {
+		return File.ReadAllBytes(path.Expand());
 	}
 
 	/// Write to the path after expanding any environment valiables (defaults to Unicode)
